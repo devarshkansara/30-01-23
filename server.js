@@ -3,7 +3,6 @@ const require = createRequire(import.meta.url);
 const app = require('fastify')({
     logger: true
 });
-import { readFileSync } from 'fs';
 import path from 'path';
 import {fileURLToPath} from 'url';
 const __filename = fileURLToPath(import.meta.url);
@@ -21,13 +20,19 @@ const movies = JSON.parse(moviesJson);
 
 //GET METHOD
 
-
 app.get('/movies', async (req, res) => {
     res.send(movies.movieList);
 });
 
-//POST METHOD
+//HEAD METHOD
+app.head('/movies/:movieId', (req, res) => {
+    res.headers({
+    ['content-length']: Buffer.from(JSON.stringify({ movies: 'movieList' })).byteLength
+});
+res.send(movies.movieList);
+});
 
+//POST METHOD
 
 app.post('/movies', async (req, res) => {
     const newMovie = req.body;
@@ -66,6 +71,26 @@ app.patch('/movies/:movieId', async (req, res) => {
         res.code(404).send(emptyResponse);
     }
 });
+
+//DELETE METHOD
+
+app.delete('/movies/:movieId', async (req, res) => {
+    let movie;
+    for (let i = 0; i < movies.movieList.length; i++) {
+        if(movies.movieList[i].id == req.params.movieId) {
+            movie = movies.movieList[i];
+            movies.movieList.splice(i, 1);
+            break;
+        }
+    }
+        if (movie) {
+            res.send(movie);
+        } else {
+            const emptyResponse = {};
+            res.code(404).send(emptyResponse);
+        }
+})
+
 
 
 const startServer = async () => {
